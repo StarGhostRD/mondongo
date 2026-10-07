@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino Style Runner + Creator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #1a1a24;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #00e5ff;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            align-items: flex-start;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* Panel del Creador de Personaje */
+        .creator-panel {
+            background: #252538;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 320px;
+            border: 1px solid #3d3d5c;
+        }
+
+        .creator-panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #ff007f;
+        }
+
+        #previewCanvas {
+            background: #151522;
+            border-radius: 8px;
+            border: 2px solid #3d3d5c;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .control-group input[type="color"] {
+            border: none;
+            width: 40px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .control-group select {
+            background: #151522;
+            color: #fff;
+            border: 1px solid #3d3d5c;
+            padding: 5px 10px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Panel del Juego */
+        .game-panel {
+            background: #252538;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #3d3d5c;
+        }
+
+        #gameCanvas {
+            background: #0d0d14;
+            border-radius: 8px;
+            border: 2px solid #3d3d5c;
+        }
+
+        .instructions {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #888;
+            text-align: center;
+        }
+
+        .instructions span {
+            color: #00e5ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Dino Runner Customizer</h1>
+
+    <div class="container">
+        <!-- Panel de Personalización -->
+        <div class="creator-panel">
+            <h2>Creador de Personaje</h2>
+            <canvas id="previewCanvas" width="120" height="150"></canvas>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label for="skinColor">Piel:</label>
+                    <input type="color" id="skinColor" value="#ffdbac">
+                </div>
+                <div class="control-group">
+                    <label for="eyeColor">Ojos:</label>
+                    <input type="color" id="eyeColor" value="#222222">
+                </div>
+                <div class="control-group">
+                    <label for="hairStyle">Pelo Estilo:</label>
+                    <select id="hairStyle">
+                        <option value="short">Corto</option>
+                        <option value="punk">Cresta / Punk</option>
+                        <option value="long">Largo</option>
+                        <option value="bald">Calvo</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="hairColor">Color Pelo:</label>
+                    <input type="color" id="hairColor" value="#4a2e00">
+                </div>
+                <div class="control-group">
+                    <label for="shirtColor">Camiseta:</label>
+                    <input type="color" id="shirtColor" value="#ff0055">
+                </div>
+                <div class="control-group">
+                    <label for="pantsColor">Pantalones:</label>
+                    <input type="color" id="pantsColor" value="#0066ff">
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel del Juego -->
+        <div class="game-panel">
+            <canvas id="gameCanvas" width="600" height="250"></canvas>
+            <div class="instructions">
+                Presiona <span>ESPACIO</span> o <span>FLECHA ARRIBA</span> o <span>TOCA LA PANTALLA</span> para saltar.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de Personalización
+        const customizer = {
+            skin: document.getElementById('skinColor').value,
+            eyes: document.getElementById('eyeColor').value,
+            hairStyle: document.getElementById('hairStyle').value,
+            hairColor: document.getElementById('hairColor').value,
+            shirt: document.getElementById('shirtColor').value,
+            pants: document.getElementById('pantsColor').value
+        };
+
+        // Escuchadores del Creador
+        document.getElementById('skinColor').addEventListener('input', (e) => { customizer.skin = e.target.value; drawPreview(); });
+        document.getElementById('eyeColor').addEventListener('input', (e) => { customizer.eyes = e.target.value; drawPreview(); });
+        document.getElementById('hairStyle').addEventListener('change', (e) => { customizer.hairStyle = e.target.value; drawPreview(); });
+        document.getElementById('hairColor').addEventListener('input', (e) => { customizer.hairColor = e.target.value; drawPreview(); });
+        document.getElementById('shirtColor').addEventListener('input', (e) => { customizer.shirt = e.target.value; drawPreview(); });
+        document.getElementById('pantsColor').addEventListener('input', (e) => { customizer.pants = e.target.value; drawPreview(); });
+
+        // Canvas Previsualización
+        const prevCanvas = document.getElementById('previewCanvas');
+        const prevCtx = prevCanvas.getContext('2d');
+
+        // Función de Renderizado del Personaje Vectorial
+        function drawCharacter(ctx, x, y, scale = 1, frame = 0, isJumping = false) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            // Piernas / Pantalones
+            ctx.fillStyle = customizer.pants;
+            if (isJumping) {
+                // Piernas encogidas
+                ctx.fillRect(8, 32, 6, 12);
+                ctx.fillRect(18, 32, 6, 8);
+            } else {
+                // Animación de correr
+                if (frame === 0) {
+                    ctx.fillRect(8, 32, 6, 16);
+                    ctx.fillRect(18, 32, 6, 10);
+                } else {
+                    ctx.fillRect(8, 32, 6, 10);
+                    ctx.fillRect(18, 32, 6, 16);
+                }
+            }
+
+            // Torso / Camiseta
+            ctx.fillStyle = customizer.shirt;
+            ctx.fillRect(6, 18, 20, 15);
+
+            // Brazos
+            ctx.fillStyle = customizer.skin;
+            if (isJumping) {
+                ctx.fillRect(2, 18, 5, 12);
+            } else {
+                let armOffset = frame === 0 ? 2 : -2;
+                ctx.fillRect(6 + armOffset, 20, 4, 10);
+            }
+
+            // Cabeza / Piel
+            ctx.fillStyle = customizer.skin;
+            ctx.fillRect(6, 2, 18, 16);
+
+            // Ojos
+            ctx.fillStyle = customizer.eyes;
+            ctx.fillRect(18, 6, 3, 4);
+
+            // Pelo
+            ctx.fillStyle = customizer.hairColor;
+            if (customizer.hairStyle === 'short') {
+                ctx.fillRect(5, 0, 20, 4);
+                ctx.fillRect(5, 0, 5, 8);
+            } else if (customizer.hairStyle === 'punk') {
+                ctx.fillRect(10, -5, 8, 8);
+                ctx.fillRect(12, -8, 5, 5);
+            } else if (customizer.hairStyle === 'long') {
+                ctx.fillRect(4, 0, 21, 5);
+                ctx.fillRect(4, 0, 6, 18);
+            }
+
+            ctx.restore();
+        }
+
+        function drawPreview() {
+            prevCtx.clearRect(0, 0, prevCanvas.width, prevCanvas.height);
+            // Dibujar personaje centrado y ampliado
+            drawCharacter(prevCtx, 25, 20, 2.2, 0, false);
+        }
+
+        // Motor del Juego
+        const gameCanvas = document.getElementById('gameCanvas');
+        const gCtx = gameCanvas.getContext('2d');
+
+        let score = 0;
+        let highscore = 0;
+        let gameSpeed = 5;
+        let isGameOver = false;
+        let gameFrame = 0;
+
+        // Propiedades del Jugador
+        const player = {
+            x: 50,
+            y: 170,
+            width: 32,
+            height: 48,
+            vy: 0,
+            gravity: 0.6,
+            jumpStrength: -11,
+            isGrounded: true,
+            animFrame: 0
+        };
+
+        // Obstáculos
+        let obstacles = [];
+        let obstacleTimer = 0;
+
+        function createObstacle() {
+            const height = Math.floor(Math.random() * 20) + 30;
+            obstacles.push({
+                x: gameCanvas.width,
+                y: 220 - height,
+                width: 18,
+                height: height
+            });
+        }
+
+        // Escuchadores de entrada
+        function handleJump() {
+            if (player.isGrounded && !isGameOver) {
+                player.vy = player.jumpStrength;
+                player.isGrounded = false;
+            } else if (isGameOver) {
+                resetGame();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                handleJump();
+            }
+        });
+
+        gameCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleJump();
+        });
+
+        function resetGame() {
+            score = 0;
+            gameSpeed = 5;
+            obstacles = [];
+            isGameOver = false;
+            player.y = 170;
+            player.vy = 0;
+            player.isGrounded = true;
+            animate();
+        }
+
+        // Bucle Principal del Juego
+        function animate() {
+            if (isGameOver) return;
+
+            gCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            gameFrame++;
+
+            // Control de físicas del jugador
+            player.vy += player.gravity;
+            player.y += player.vy;
+
+            if (player.y >= 170) {
+                player.y = 170;
+                player.vy = 0;
+                player.isGrounded = true;
+            }
+
+            // Alternar frame de animación de carrera cada 8 ticks
+            if (gameFrame % 8 === 0) {
+                player.animFrame = player.animFrame === 0 ? 1 : 0;
+            }
+
+            // Dibujar Suelo
+            gCtx.strokeStyle = '#3d3d5c';
+            gCtx.lineWidth = 2;
+            gCtx.beginPath();
+            gCtx.moveTo(0, 218);
+            gCtx.lineTo(gameCanvas.width, 218);
+            gCtx.stroke();
+
+            // Dibujar Personaje en el juego (utiliza la configuración en tiempo real)
+            drawCharacter(gCtx, player.x, player.y, 1, player.animFrame, !player.isGrounded);
+
+            // Generar Obstáculos
+            obstacleTimer++;
+            if (obstacleTimer > Math.random() * 60 + 80) {
+                createObstacle();
+                obstacleTimer = 0;
+            }
+
+            // Mover y Dibujar Obstáculos
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.x -= gameSpeed;
+
+                // Dibujar obstáculo tipo Cactus / Barrera
+                gCtx.fillStyle = '#00e5ff';
+                gCtx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                // Colisiones
+                if (
+                    player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y
+                ) {
+                    isGameOver = true;
+                }
+            }
+
+            // Limpiar obstáculos fuera de pantalla
+            obstacles = obstacles.filter(obs => obs.x + obs.width > 0);
+
+            // Aumentar Puntuación y Dificultad
+            score++;
+            if (score > highscore) highscore = score;
+            if (score % 500 === 0) gameSpeed += 0.5;
+
+            // Interfaz / Marcadores
+            gCtx.fillStyle = '#fff';
+            gCtx.font = '16px monospace';
+            gCtx.fillText(`SCORE: ${Math.floor(score / 5)}`, 430, 30);
+            gCtx.fillText(`HI: ${Math.floor(highscore / 5)}`, 330, 30);
+
+            if (isGameOver) {
+                gCtx.fillStyle = 'rgba(0,0,0,0.7)';
+                gCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+                gCtx.fillStyle = '#ff007f';
+                gCtx.font = 'bold 24px sans-serif';
+                gCtx.textAlign = 'center';
+                gCtx.fillText('¡GAME OVER!', gameCanvas.width / 2, 110);
+
+                gCtx.fillStyle = '#fff';
+                gCtx.font = '16px sans-serif';
+                gCtx.fillText('Presiona Espacio o toca para reiniciar', gameCanvas.width / 2, 150);
+                gCtx.textAlign = 'left';
+            } else {
+                requestAnimationFrame(animate);
+            }
+        }
+
+        // Inicializar
+        drawPreview();
+        animate();
+    </script>
+</body>
+</html>
